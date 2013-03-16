@@ -5,10 +5,11 @@
 (function($) {
 	Drupal.behaviors.kairosDashboard = {
 		attach: function(context, settings) {
+			console.log(settings);
 			// Initialize the data array.
 			var series = [];
 			$(settings.kairosDashboardMilestones).each(function (projectNid, milestonesDates) {
-
+			
 			});
 
 			// Create the data array for milestones. Create an entry for each
@@ -21,6 +22,9 @@
 
 
 	    	var chart;
+	    	var chartSeries = settings.kairosDashboardSeries;
+	    	var chartXaxis = settings.kairosDashboardXaxis;
+	    	console.log(series);
 	        chart = new Highcharts.Chart({
 	            chart: {
 	                renderTo: 'foobar'
@@ -29,7 +33,7 @@
 	                text: 'Milestones Chart'
 	            },
 	            xAxis: {
-	                categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week ']
+	                categories: chartXaxis
 	            },
 	            tooltip: {
 	                formatter: function() {
@@ -63,28 +67,7 @@
 	                    }
 	                }]
 	            },
-	            series: [{
-	                type: 'column',
-	                name: 'Project1',
-	                data: [3, 2, 1, 3, 4]
-	            }, {
-	                type: 'column',
-	                name: 'Project2',
-	                data: [2, 3, 5, 7, 6]
-	            }, {
-	                type: 'column',
-	                name: 'Project3',
-	                data: [4, 3, 3, 9, 0]
-	            }, {
-	                type: 'spline',
-	                name: 'Projected Workload',
-	                data: [10, 9, 3, 6.33, 9],
-	                marker: {
-	                	lineWidth: 2,
-	                	lineColor: Highcharts.getOptions().colors[3],
-	                	fillColor: 'white'
-	                }
-	            },]
+	            series: chartSeries
 	        });		
 		}
 	};
