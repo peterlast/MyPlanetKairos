@@ -1,0 +1,77 @@
+<?php
+	/**
+	 * Implements hook_menu().
+	 */
+	function kairos_dashboard_menu() {
+		 $items['my-dashboard'] = array(
+		 	'title' => 'Dashboard',
+      		'page callback' => 'kairos_dashboard_main_dashboard',
+    		'access arguments' => array('access content'),
+    		'type' => MENU_CALLBACK,      		
+      		//'page arguments' => array(1),
+    	);
+    	return $items;
+	}
+
+	/**
+	 * Menu callback for displaying the primary dashboard to a user.
+	 *
+	 * Grab all the milestones from now to three months from now and
+	 * compile statistics on those milestones. The statistics are stored
+	 * as a sparse matrix with project as the first key and date as the
+	 * second and the value of the milestone size.
+	 *
+	 */
+	function kairos_dashboard_main_dashboard() {
+		global $user;
+
+		// Reject anonymous users.
+		if ($user->uid == 0) {
+			drupal_not_found();
+		}
+		// Query for the milestones belonging to this user and
+		// within the time limit (now to 3 months from now).
+		$date_format = "Y-m-d H:i:s";
+		$query = new EntityFieldQuery();
+		$query->entityCondition('entity_type', 'node')
+		    ->entityCondition('bundle', 'milestones')
+		    ->propertyCondition('status', 1)
+		    ->fieldCondition('field_milestone_date', 
+		    	'value', 
+		    	array(date($date_format), date($date_format, time() + 60*60*24*30*3)),
+		    	'BETWEEN') 
+		    ->addMetaData('account', $user);
+		$result = $query->execute();
+
+		if (isset($result['node'])) {
+		  $milestones_nids = array_keys($result['node']);
+		  $milestones = entity_load('node', $milestones_nids);
+		}		
+
+		// Compile statistics for milestones and append to settings.
+		$data = array();
+		$projects = array();
+		foreach ($milestones as $milestone_entity_id => $milestone) {
+			// Add an entry to the corresponding project data array.
+			$project = node_load($milestone->field_project[LANGUAGE_NONE][0]['nid']);
+			$milestone_date = $milestone->field_milestone_date[LANGUAGE_NONE][0]['value'];
+			$milestone_size = $milestone->field_milestone_size[LANGUAGE_NONE][0]['value'];
+			// If it doesn't exist, create it.
+			if (!isset($data[$project->nid])) {
+				$data[$project->nid] = array();
+				$projects[$project->nid] = $project->title;
+			}
+			$data[$project_nid][$milestone_date] = $milestone_size;
+		}
+		drupal_add_js(array('kairosDashboardMilestones' => $data), 'setting');
+		drupal_add_js(array('kairosDashboardProjects' => $projects), 'setting');
+
+		// Append JSFiddle graphings libs
+		drupal_add_js('http://code.highcharts.com/highcharts.js', 'external');
+		drupal_add_js('http://code.highcharts.com/modules/exporting.js', 'external');
+
+		drupal_add_js(drupal_get_path('module', 'kairos_dashboard') . '/js/dashboard.js', 'file');
+
+		// Fin
+		return '<div id="foobar"></div>';
+	}
